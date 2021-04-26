@@ -20,7 +20,6 @@ ACCESS_T_SECRET
 
 herd_names = {"electricsheep02","electricsheep03"}
 herd_accounts= list()
-print(os.environ.get("Test"))
 
 if os.environ.get("API_KEY") != None:
     print("potato")
@@ -59,6 +58,7 @@ for i in range(0,1):
 #api.update_status("Wake up at " + str(dt.datetime.timestamp(dt.datetime.now())))
 
 class sheepie:
+    hunger= 25;
     moods = []
     hours_alive = 0
     def __init__(self, api):
@@ -66,6 +66,30 @@ class sheepie:
         self.sleeping = False
         self.me = self.api.me()
         self.start = time.time()
+        self.sleep_hours=0
+        self.awake_hours = 0
+        self.switcher = list
+        self.switcher = ["Graze","Gather","eat","Scratch",]
+        for i in range(3,111):
+            if i < 10:
+                self.switcher.append("Baah")
+            if i >= 10 and i < 30:
+                self.switcher.append("Grazing")
+            if i >= 30 and i < 45 :
+                self.switcher.append( "Scratching")
+            if i >= 50 and i < 60:
+                self.switcher.append("Gather")
+            if i >= 60 and i < 100:
+                self.switcher.append("Baah ")
+            if i > 99:
+                self.switcher.append("baah")
+
+        self.switcher[100]=("Sleep")
+        self.switcher[101]=("Paralyze")
+        self.switcher[102]=( "Wolf!!")
+        self.switcher[103]=("Run!")
+        self.switcher[104]=("Waking up")
+        self.switcher[105]=("feed")
         print (self.start)
 
     def mood(self, new_feel, force = False):
@@ -74,57 +98,36 @@ class sheepie:
                 #okay so we dont want it to return the same mood over and
                 #over again unless its a Baah. this will also work for the ones that are similar
                 # ie "scratch" and "scratching"
-                new_feel = switch(rng.randint(0,100))
-                new_feel = mood(new_feel) # bit of recursion ftw + smart coding ;)
-
+                new_feel = self.switch(rng.randint(0,100))
+                new_feel = self.mood(new_feel) # bit of recursion ftw + smart coding ;)
+        elif self.hunger < 15:
+            new_feel = self.switch(21)
         else:
             self.moods.append(new_feel)
             return new_feel
         return new_feel
 
     def switch(self, feelings):
-        switcher = list
-        switcher = ["Graze","Gather","eat","Scratch",]
-        for i in range(3,110):
-            if i < 10:
-                switcher.append("Baah ")
-            if i >= 10 and i < 20:
-                switcher.append("Grazing")
-            if i >= 20 and i < 40:
-                switcher.append("eating")
-            if i >= 40 and i < 50 :
-                switcher.append( "Scratching")
-            if i >= 50 and i < 60:
-                switcher.append("Gather")
-            if i >= 60 and i < 100:
-                switcher.append("Baah ")
-            if i > 99:
-                switcher.append("baah")
-
-        switcher[100]=("Sleep")
-        switcher[101]=("Paralyze")
-        switcher[102]=( "Wolf!!")
-        switcher[103]=("Run!")
-        switcher[109]=("Waking up")
-
-        return switcher[feelings] + " " + "".join(rng.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(4))
+        if feelings >= 10 and feelings <=20:
+            self.hunger += 5
+        return self.switcher[feelings] + " " + "".join(rng.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(4))
 
 
 
     def living(self):    
-        sleep_hours=0
-        awake_hours = 0
+
         if self.sleeping == False:
             dtime = time.time()
             curr_time = dtime - self.start
-            print(curr_time)
-            if curr_time > 3600: #1hour
+            print("timeAlive "+str(curr_time))
+            if curr_time > 10: #1hour
                 self.hours_alive += 1
-                awake_hours +=1
-                print("awake for "+ str(awake_hours))
-                self.start = 0
-                if awake_hours > 16:
+                self.awake_hours += 1
+                print("awake for "+ str(self.hours_alive))
+
+                if self.awake_hours > 10:
                     self.sleeping = True
+                    self.awake_hours = 0
                     try:
                         self.api.update_status(self.switch(100))
                     except:
@@ -135,6 +138,9 @@ class sheepie:
             try:
                 self.api.update_status(self.mood(self.switch(feeling)))
                 print(str(feeling)+" " + self.switch(feeling))
+                if "eat" in self.moods[-1]:
+                    self.hunger = self.hunger + 15
+
             except:
                 print( str(feeling)+" " + self.switch(feeling))
                 print("dup error")
@@ -145,14 +151,15 @@ class sheepie:
         if self.sleeping:
             dtime = time.time()
             curr_time = dtime - self.start
-            if curr_time > 3600: #1hour
+            if curr_time > 10: #1hour
                 self.sleep_hours += 1
                 self.hours_alive += 1
-                self.start = 0
-                print("sleeping for " + sleep_hours)
-            if self.sleep_hours > 8:
+
+                print("sleeping for " + str(self.sleep_hours)  + str(self.start))
+            if self.sleep_hours > 10:
                 self.moods = []
                 self.sleeping = False
+                self.sleep_hours = 0
                 return
     
     def herd_call(self):
