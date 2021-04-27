@@ -4,6 +4,7 @@ from dotenv import load_dotenv, find_dotenv
 import datetime as dt
 import random as rng
 import time
+import datetime as dt
 import string
 import json
 load_dotenv(find_dotenv())
@@ -78,7 +79,7 @@ class sheepie:
             if i >= 30 and i < 45 :
                 self.switcher.append( "Scratching")
             if i >= 50 and i < 60:
-                self.switcher.append("Gather")
+                self.switcher.append("Group up")
             if i >= 60 and i < 100:
                 self.switcher.append("Baah ")
             if i > 99:
@@ -175,6 +176,15 @@ class sheepie:
         except:
             print("BAAah? (where is everyone)")
 
+    def feed_sheep(self):
+        searchingforfood ="#f33dth3sh33p"
+        try:
+            feedStock = tweepy.Cursor(self.api.search, q=searchingforfood, lang="en").items(5)
+            print("looking for food")
+            for tweet in feedStock:
+                print(tweet.text)
+        except:
+            print("no feed so far")
 
     def herd_interact(self):
         pasture = tweepy.Cursor(self.api.home_timeline).items(2)
@@ -182,13 +192,13 @@ class sheepie:
         for baah in pasture:
             print("tweet: "+baah.user.name + " "+ baah.text)
             if baah.user.name != self.me.name:
-                if "Gather" in baah.text:
+                if "Group up" in baah.text:
                     self.api.update_status( "@" + baah.user.screen_name  + " " + self.mood(self.switch(1),force = True), in_reply_to_status_id=baah.id)
                     print(self.me.name + " spoke to " + baah.user.name)
                     break
                 else:
                     print("listening to self")
-        #except:
+        #except:`   .1`
 
         time.sleep(2)
                 
@@ -199,7 +209,7 @@ herd_bots.append(sheepie(apis[1]))
 for i in range(0,len(herd_bots)):
     print("finding eachother")
     herd_bots[i].herd_call()
-
+    herd_bots[i].feed_sheep()
 while True:
     for i in range(0,len(herd_bots)):
 
