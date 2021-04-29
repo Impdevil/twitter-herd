@@ -41,7 +41,7 @@ apis.append(api_2)
 
 
 
-for i in range(0,1):
+for api in apis:
     try:
         api.verify_credentials()
         print("Baaah "  + str(dt.datetime.timestamp(dt.datetime.now())))
@@ -92,6 +92,18 @@ class sheepie:
         self.switcher[104]=("Waking up")
         self.switcher[105]=("feed")
         print (self.start)
+
+
+    def check_tweet_id(self, tweetid):
+        if(True):
+        #try:
+            print("text file to open " + self.me.name + ".txt")
+            with open(self.me.name + ".txt", "r+") as file:
+                for line in file.readlines():
+                    if line == tweetid:
+                        return True
+        #except:
+        print("no lines found or text file does not exist!!")
 
     def mood(self, new_feel, force = False):
         if len(self.moods) != 0 and force == False:
@@ -178,12 +190,16 @@ class sheepie:
 
     def feed_sheep(self):
         searchingforfood ="#f33dth3sh33p"
-        try:
+        if(True):
+        #try:
             feedStock = tweepy.Cursor(self.api.search, q=searchingforfood, lang="en").items(5)
             print("looking for food")
             for tweet in feedStock:
                 print(tweet.text)
-        except:
+                if check_tweet_id(tweet.id):
+                    print("not definded")
+        else:
+        #except:
             print("no feed so far")
 
     def herd_interact(self):
@@ -198,9 +214,11 @@ class sheepie:
                     break
                 else:
                     print("listening to self")
-        #except:`   .1`
 
-        time.sleep(2)
+        
+    
+                    
+
                 
 
 herd_bots = list()
