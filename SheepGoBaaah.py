@@ -95,15 +95,39 @@ class sheepie:
 
 
     def check_tweet_id(self, tweetid):
-        if(True):
-        #try:
-            print("text file to open " + self.me.name + ".txt")
-            with open(self.me.name + ".txt", "r+") as file:
+        logName = "SheepLogs/"+ self.me.name+".txt"
+        if os.path.exists(logName):
+            print(logName)
+            with open(logName, "r") as file:
                 for line in file.readlines():
-                    if line == tweetid:
+                    if line == str(tweetid):
                         return True
-        #except:
+                        file.close()
         print("no lines found or text file does not exist!!")
+        return False
+
+    def write_tweet_id(self,tweetid):
+        logName = "SheepLogs/"+ self.me.name+".txt"
+        if os.path.exists(logName):
+            print("potato")
+            with open (logName, "r") as readFile, open("SheepLogs/"+ self.me.name+".temp", "w") as writeFile:
+                writeFile.write(str(tweetid)+"\n")
+                for line in readFile:
+                    writeFile.write(line)
+                    
+                readFile.close()
+                os.remove(logName)
+            os.rename("SheepLogs/"+ self.me.name+".temp", logName)
+
+
+        else:
+            with open(logName, "w") as file:
+                file.write(str(tweetid) + "\n")
+
+
+                
+
+
 
     def mood(self, new_feel, force = False):
         if len(self.moods) != 0 and force == False:
@@ -196,8 +220,10 @@ class sheepie:
             print("looking for food")
             for tweet in feedStock:
                 print(tweet.text)
-                if check_tweet_id(tweet.id):
-                    print("not definded")
+                if self.check_tweet_id(tweet.id) !=True:
+                    self.write_tweet_id(tweet.id)
+                    self.api.update_status( "@" + tweet.user.screen_name  + " " + self.mood(self.switch(105),force = True), in_reply_to_status_id=tweet.id)
+
         else:
         #except:
             print("no feed so far")
