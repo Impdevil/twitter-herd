@@ -119,9 +119,10 @@ class sheepie:
                         file.close()
                         return True
                 file.close()
-        print("no lines found or text file does not exist!!")
-        
-        return False
+        else:
+            print("no file found")        
+            return False
+
     def write_tweet_id(self,tweetid):
         logName = "SheepLogs/"+ self.me.name+".txt"
         if os.path.exists(logName):
@@ -157,7 +158,7 @@ class sheepie:
 
     def switch(self, feelings):
         if feelings >= 30 and feelings < 45 :
-            self.hunger += 5
+            self.hunger += 25
         return self.switcher[feelings] + " " + "".join(rng.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(4))
 
 
@@ -188,8 +189,8 @@ class sheepie:
                 if self.check_tweet_id(tweet.id) != True:
                     self.write_tweet_id(tweet.id)
                     self.api.update_status( "@" + tweet.user.screen_name  + " " + self.mood(self.switch(105),force = True), in_reply_to_status_id=tweet.id)
-                    self.hunger -= rng.randint(20,80)
-                    self.RNGMood["interaction"] += 10
+                    self.hunger -= rng.randint(50,120)
+                    self.RNGMood["interaction"] += 30
                     return
         
             print("here we goooo")
@@ -201,13 +202,14 @@ class sheepie:
             if self.check_tweet_id(tweet.id) !=True:
                 self.write_tweet_id(tweet.id)
                 self.api.update_status( "@" + tweet.user.screen_name  + " " + self.mood(self.switch(105),force = True), in_reply_to_status_id=tweet.id)
-                self.hunger -= 40
-                self.RNGMood["interaction"] += 20
+                self.hunger -= 80
+                self.RNGMood["interaction"] += 60
                 return
         except:
             print("no feed so far")
 
     def herd_interact(self):
+        print("needing interaction")
         pasture = tweepy.Cursor(self.api.home_timeline).items(10)
         for baah in pasture:
             if baah.user.name != self.me.name and self.check_tweet_id(baah.id) != True:
@@ -217,16 +219,15 @@ class sheepie:
                     
                     self.api.update_status( "@" + baah.user.screen_name  + " " + self.mood(self.switch(1),force = True), in_reply_to_status_id=baah.id)
                     print(self.me.name + " spoke to " + baah.user.name)
-                    self.RNGMood["interaction"] -= 10
+                    self.RNGMood["interaction"] -= 30
                     break
                 else:
                     print("listening to self")
+        if self.RNGMood["interaction"] > 40:
+            self.api.update_status(self.mood(self.switch(61)))
 
     def is_awake_action(self, currTime):    
-
-
         feeling = rng.randint(0,99)
-        #if(True):
         try:
                 self.api.update_status(self.mood(self.switch(feeling)))
                 print(str(feeling)+" " + self.switch(feeling))
@@ -259,7 +260,7 @@ class sheepie:
             
             if self.wait_timer > self.wait_time:
                 print(self.api.me().name +" is awake!!")          
-                self.RNGMood["hungry"] = self.RNGMood["hungry"] + self.hunger 
+
                 totalrange = 0
                 print("Hunger: "+str(self.hunger))
                 print("Hungry level : " + str(self.RNGMood["hungry"]))
@@ -280,10 +281,10 @@ class sheepie:
                     if  moodint > self.RNGMood["interaction"] and moodint <= self.RNGMood["interaction"] + self.RNGMood["hungry"]:
                         self.feed_sheep()
                     elif moodint < self.RNGMood["interaction"]:
-                        x = rng.randint(0,5)
-                        if x > 2:
+                        x = rng.randint(0,self.RNGMood["interaction"])
+                        if x < self.RNGMood["interaction"]/4:
                             self.is_awake_action(curr_time)
-                        if x < 2:
+                        if x > self.RNGMood["interaction"]/4:
                             self.herd_interact()
                 
                 
@@ -291,7 +292,10 @@ class sheepie:
                 self.wait_start = [time.time(),]
                 self.wait_time = 50 + rng.randint(7,123)
                 self.hunger = self.hunger + rng.randint(-5, 5)
-                self.RNGMood["hungry"] += int(rng.randint(0, self.wait_time)/2)
+                if self.RNGMood["hungry"] < 500:
+                    self.RNGMood["hungry"] += int(rng.randint(0, self.wait_time)/4)
+                    self.RNGMood["hungry"] = self.RNGMood["hungry"] + self.hunger 
+                self.RNGMood["interaction"] += int(rng.randint(0,self.wait_time)/5)
 
                 print("Waiting: "+str(self.wait_time) + " seconds")
             
