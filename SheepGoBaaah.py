@@ -5,6 +5,7 @@ import datetime as dt
 import random as rng
 import time
 import datetime as dt
+import calendar as Cal
 import string
 import json
 load_dotenv(find_dotenv())
@@ -58,19 +59,35 @@ for api in apis:
 
 #api.update_status("Wake up at " + str(dt.datetime.timestamp(dt.datetime.now())))
 
+
 class sheepie:
     hunger= 25;
-    moods = []
+
     hours_alive = 0
+
+
+    RNGMood = {
+        "hungry" : 20,
+        "interaction" : 20,
+        "playful":0
+    }
+
+
+
     def __init__(self, api):
         self.api = api
         self.sleeping = False
         self.me = self.api.me()
         self.start = time.time()
-        self.sleep_hours=0
-        self.awake_hours = 0
+        self.moods = []
+        self.moods.append("awake",)
         self.switcher = list
         self.switcher = ["Graze","Gather","eat","Scratch",]
+        self.wait_timer=0
+        self.wait_start = [0,]
+        self.wait_time = 0
+        
+
         for i in range(3,111):
             if i < 10:
                 self.switcher.append("Baah")
@@ -90,31 +107,30 @@ class sheepie:
         self.switcher[102]=( "Wolf!!")
         self.switcher[103]=("Run!")
         self.switcher[104]=("Waking up")
-        self.switcher[105]=("feed")
+        self.switcher[105]=("feeding XD")
         print (self.start)
-
 
     def check_tweet_id(self, tweetid):
         logName = "SheepLogs/"+ self.me.name+".txt"
         if os.path.exists(logName):
-            print(logName)
             with open(logName, "r") as file:
                 for line in file.readlines():
-                    if line == str(tweetid):
-                        return True
+                    if  str(tweetid) in line:
                         file.close()
+                        return True
+                file.close()
         print("no lines found or text file does not exist!!")
+        
         return False
-
     def write_tweet_id(self,tweetid):
         logName = "SheepLogs/"+ self.me.name+".txt"
         if os.path.exists(logName):
-            print("potato")
+
             with open (logName, "r") as readFile, open("SheepLogs/"+ self.me.name+".temp", "w") as writeFile:
                 writeFile.write(str(tweetid)+"\n")
                 for line in readFile:
                     writeFile.write(line)
-                    
+                print("writing tweet")    
                 readFile.close()
                 os.remove(logName)
             os.rename("SheepLogs/"+ self.me.name+".temp", logName)
@@ -124,80 +140,28 @@ class sheepie:
             with open(logName, "w") as file:
                 file.write(str(tweetid) + "\n")
 
-
-                
-
-
-
     def mood(self, new_feel, force = False):
         if len(self.moods) != 0 and force == False:
-            if new_feel in self.moods[-1] and "Baah " not in new_feel:
+            if new_feel in self.moods[-1] or "Baah " in new_feel:
                 #okay so we dont want it to return the same mood over and
                 #over again unless its a Baah. this will also work for the ones that are similar
                 # ie "scratch" and "scratching"
                 new_feel = self.switch(rng.randint(0,100))
                 new_feel = self.mood(new_feel) # bit of recursion ftw + smart coding ;)
         elif self.hunger < 15:
-            new_feel = self.switch(21)
+            new_feel = self.switch(31)
         else:
             self.moods.append(new_feel)
             return new_feel
         return new_feel
 
     def switch(self, feelings):
-        if feelings >= 10 and feelings <=20:
+        if feelings >= 30 and feelings < 45 :
             self.hunger += 5
         return self.switcher[feelings] + " " + "".join(rng.SystemRandom().choice(string.ascii_uppercase + string.digits) for _ in range(4))
 
 
-
-    def living(self):    
-
-        if self.sleeping == False:
-            dtime = time.time()
-            curr_time = dtime - self.start
-            print("timeAlive "+str(curr_time))
-            if curr_time > 10: #1hour
-                self.hours_alive += 1
-                self.awake_hours += 1
-                print("awake for "+ str(self.hours_alive))
-
-                if self.awake_hours > 10:
-                    self.sleeping = True
-                    self.awake_hours = 0
-                    try:
-                        self.api.update_status(self.switch(100))
-                    except:
-                        print("dup error again")
-                        self.api.update_status(self.switch(100) + "...")
-                    return
-            feeling = rng.randint(0,99)
-            try:
-                self.api.update_status(self.mood(self.switch(feeling)))
-                print(str(feeling)+" " + self.switch(feeling))
-                if "eat" in self.moods[-1]:
-                    self.hunger = self.hunger + 15
-
-            except:
-                print( str(feeling)+" " + self.switch(feeling))
-                print("dup error")
-            wait_time = 23 + rng.randint(7,97)
-            print("Waiting "+str(wait_time))
-            time.sleep(wait_time)
-        #What to do with this thing hmmm
-        if self.sleeping:
-            dtime = time.time()
-            curr_time = dtime - self.start
-            if curr_time > 10: #1hour
-                self.sleep_hours += 1
-                self.hours_alive += 1
-
-                print("sleeping for " + str(self.sleep_hours)  + str(self.start))
-            if self.sleep_hours > 10:
-                self.moods = []
-                self.sleeping = False
-                self.sleep_hours = 0
-                return
+######## AI systems
     
     def herd_call(self):
         global herd_names
@@ -214,38 +178,125 @@ class sheepie:
 
     def feed_sheep(self):
         searchingforfood ="#f33dth3sh33p"
-        if(True):
-        #try:
+        print("looking for food")
+        #if(True):
+        try:
             feedStock = tweepy.Cursor(self.api.search, q=searchingforfood, lang="en").items(5)
-            print("looking for food")
+
             for tweet in feedStock:
-                print(tweet.text)
-                if self.check_tweet_id(tweet.id) !=True:
+                print(tweet.user.screen_name + " " + tweet.text)
+                if self.check_tweet_id(tweet.id) != True:
                     self.write_tweet_id(tweet.id)
                     self.api.update_status( "@" + tweet.user.screen_name  + " " + self.mood(self.switch(105),force = True), in_reply_to_status_id=tweet.id)
+                    self.hunger -= rng.randint(20,80)
+                    self.RNGMood["interaction"] += 10
+                    return
+        
+            print("here we goooo")
+            searchingforfood= "#feedthesheep"
+            feedStock = tweepy.Cursor(self.api.search, q=searchingforfood, lang="en").items(10)
 
-        else:
-        #except:
+            tweet = feedStock(rng.randint(0,feedStock.num_tweets))
+            print(tweet.text)
+            if self.check_tweet_id(tweet.id) !=True:
+                self.write_tweet_id(tweet.id)
+                self.api.update_status( "@" + tweet.user.screen_name  + " " + self.mood(self.switch(105),force = True), in_reply_to_status_id=tweet.id)
+                self.hunger -= 40
+                self.RNGMood["interaction"] += 20
+                return
+        except:
             print("no feed so far")
 
     def herd_interact(self):
-        pasture = tweepy.Cursor(self.api.home_timeline).items(2)
-
+        pasture = tweepy.Cursor(self.api.home_timeline).items(10)
         for baah in pasture:
-            print("tweet: "+baah.user.name + " "+ baah.text)
-            if baah.user.name != self.me.name:
+            if baah.user.name != self.me.name and self.check_tweet_id(baah.id) != True:
+                print("tweet: "+baah.user.name + " "+ baah.text)
                 if "Group up" in baah.text:
+                    self.write_tweet_id(baah.id)
+                    
                     self.api.update_status( "@" + baah.user.screen_name  + " " + self.mood(self.switch(1),force = True), in_reply_to_status_id=baah.id)
                     print(self.me.name + " spoke to " + baah.user.name)
+                    self.RNGMood["interaction"] -= 10
                     break
                 else:
                     print("listening to self")
 
-        
-    
-                    
+    def is_awake_action(self, currTime):    
 
+
+        feeling = rng.randint(0,99)
+        #if(True):
+        try:
+                self.api.update_status(self.mood(self.switch(feeling)))
+                print(str(feeling)+" " + self.switch(feeling))
+                if "eat" in self.moods[-1]:
+                    self.hunger = self.hunger -15
+
+        except:
+                print( str(feeling)+" " + self.switch(feeling))
+                print("dup error")
+
+
+    ###
+    #
+    ###
+    def ai_algo(self):
+
+        dtime = time.time()
+        curr_time = dtime - self.start
+        #print("time alive " + str(curr_time))
+        hours = dt.datetime.now().hour;mins= dt.datetime.now().minute
+        if hours > 7 and hours < 23:            #check if sheep should be asleep next run through
+            self.sleeping = False
+        else: 
+            print("going to sleep now")
+            self.sleeping = True
+
+
+        if self.sleeping != True:
+            self.wait_timer = dtime - self.wait_start[0]
+            
+            if self.wait_timer > self.wait_time:
+                print(self.api.me().name +" is awake!!")          
+                self.RNGMood["hungry"] = self.RNGMood["hungry"] + self.hunger 
+                totalrange = 0
+                print("Hunger: "+str(self.hunger))
+                print("Hungry level : " + str(self.RNGMood["hungry"]))
+                print("interaction: " + str(self.RNGMood["interaction"]))
+
+                for i in self.RNGMood.values():
+                    totalrange += i
+                print("mood range: "+ str(totalrange))
+                if totalrange < 1:
+                    x = rng.randint(0,1)
+                    if x == 1:
+                        self.is_awake_action(curr_time)
+                    if x == 0:
+                        self.herd_interact()
+                else:
+                    moodint = rng.randint(0, int(totalrange))
+                    print("mood choice: " + str(moodint))
+                    if  moodint > self.RNGMood["interaction"] and moodint <= self.RNGMood["interaction"] + self.RNGMood["hungry"]:
+                        self.feed_sheep()
+                    elif moodint < self.RNGMood["interaction"]:
+                        x = rng.randint(0,5)
+                        if x > 2:
+                            self.is_awake_action(curr_time)
+                        if x < 2:
+                            self.herd_interact()
                 
+                
+                self.wait_timer = 0
+                self.wait_start = [time.time(),]
+                self.wait_time = 50 + rng.randint(7,123)
+                self.hunger = self.hunger + rng.randint(-5, 5)
+                self.RNGMood["hungry"] += int(rng.randint(0, self.wait_time)/2)
+
+                print("Waiting: "+str(self.wait_time) + " seconds")
+            
+
+
 
 herd_bots = list()
 herd_bots.append(sheepie(apis[0]))
@@ -253,13 +304,10 @@ herd_bots.append(sheepie(apis[1]))
 for i in range(0,len(herd_bots)):
     print("finding eachother")
     herd_bots[i].herd_call()
-    herd_bots[i].feed_sheep()
 while True:
     for i in range(0,len(herd_bots)):
 
-        print("switching to " + herd_bots[i].api.me().name)
-        if rng.randint(0,5) == 1:
-            herd_bots[i].herd_interact()
-        herd_bots[i].living()
+        #print("switching to " + herd_bots[i].api.me().name)
+        herd_bots[i].ai_algo()
 
 
